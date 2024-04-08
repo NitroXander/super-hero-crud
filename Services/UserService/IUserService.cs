@@ -11,8 +11,12 @@ namespace SuperHeros.Services.UserService
 
         BaseResponce UpdateUser(string email, UpdateUserRequest request);
 
+        BaseResponce FindUserById(long id);
+
         BaseResponce FindUserPermissionsById(long id);
 
         BaseResponce UpdateUserRoleByUserId(long id, UpdateRoleRequest request);
+
+        BaseResponce updateRoleByUserIdJoinQuery(long id, UpdateRoleRequest request);
     }
 }

@@ -11,12 +11,24 @@ namespace SuperHeros
         {
 
         }
+        public ApplicationDbContext()
+        {
+            
+        }
 
         public virtual DbSet<HeroModel> Heroes { get; set; }
         public virtual DbSet<UserModel> Users { get; set; }
         public virtual DbSet<RoleModel> Roles { get; set; }
         public virtual DbSet<CounryCodes> CounryCodes { get; set; }
         public virtual DbSet<LoginDetailsModel> LoginDetails { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if(!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseMySql(ServerVersion.AutoDetect("Server=localhost;Database=SuperHeros;Uid=root;Pwd=;"));
+            }
+        }
     }
 
 }

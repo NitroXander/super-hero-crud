@@ -36,6 +36,13 @@ namespace SuperHeros.Controllers
             return userService.Authenticate(request);
         }
 
+        [HttpGet("findUserById/{id}")]
+        public BaseResponce FindUserById(long id)
+        {
+            return userService.FindUserById(id);
+        }
+
+
         [HttpGet("getUserPermissionsById/{id}")]
         public BaseResponce GetUserPermissionsById(long id)
         {
@@ -46,6 +53,12 @@ namespace SuperHeros.Controllers
         public BaseResponce UpdateUserRoleByUserId(long id, UpdateRoleRequest request)
         {
             return userService.UpdateUserRoleByUserId(id, request);
+        }
+
+        [HttpPut("updateRoleByUserIdJoinQuery/{id}")]
+        public BaseResponce updateRoleByUserIdJoinQuery(long id, UpdateRoleRequest request)
+        {
+            return userService.updateRoleByUserIdJoinQuery(id, request);
         }
     }
 }

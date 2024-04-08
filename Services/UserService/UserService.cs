@@ -4,12 +4,14 @@ using SuperHeros.DTOs.Requests;
 using SuperHeros.DTOs.Responces;
 using SuperHeros.Helpers.Utils;
 using SuperHeros.Models;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SuperHeros.Services.UserService
 {
     public class UserService : IUserService
     {
-        private readonly ApplicationDbContext context; 
+        private readonly ApplicationDbContext context;
 
         public UserService(ApplicationDbContext applicationDbContext)
         {
@@ -22,7 +24,7 @@ namespace SuperHeros.Services.UserService
 
             try
             {
-                UserModel? user = context.Users.Where(user =>user.email == request.email).FirstOrDefault();
+                UserModel? user = context.Users.Where(user => user.email == request.email).FirstOrDefault();
 
                 if (user == null)
                 {
@@ -35,19 +37,19 @@ namespace SuperHeros.Services.UserService
 
                 string md5Password = Supports.GetMd5HashedOutput(request.password);
 
-                if(user.password == md5Password)
+                if (user.password == md5Password)
                 {
                     string jwt = JwtUtils.GenerateJwtToken(user);
 
                     LoginDetailsModel? loginDetails = context.LoginDetails.Where(loginDetails => loginDetails.id == user.id).FirstOrDefault();
 
-                    if(loginDetails == null)
+                    if (loginDetails == null)
                     {
                         loginDetails = new LoginDetailsModel();
                         loginDetails.id = user.id;
                         loginDetails.email = request.email;
 
-                        if(user.role != null)
+                        if (user.role != null)
                         {
                             RoleModel? role = context.Roles.Where(role => role.id == user.role).FirstOrDefault();
                             loginDetails.role = role.role_name;
@@ -129,7 +131,7 @@ namespace SuperHeros.Services.UserService
 
                 return responce;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 responce = new BaseResponce
                 {
@@ -137,8 +139,8 @@ namespace SuperHeros.Services.UserService
                     data = new { message = "Internal server error" }
                 };
 
-                return responce;    
-            }   
+                return responce;
+            }
         }
 
         public BaseResponce UpdateUser(string email, UpdateUserRequest request)
@@ -197,6 +199,44 @@ namespace SuperHeros.Services.UserService
             return responce;
         }
 
+        public BaseResponce FindUserById(long id)
+        {
+            BaseResponce responce;
+
+            try
+            {
+                UserModel user = context.Users.Where(user => user.id == id).FirstOrDefault();
+
+                if (user != null)
+                {
+                    responce = new BaseResponce
+                    {
+                        status = StatusCodes.Status400BadRequest,
+                        data = new { message = user }
+                    };
+                }
+                else
+                {
+                    responce = new BaseResponce
+                    {
+                        status = StatusCodes.Status400BadRequest,
+                        data = new { message = "User Not Found" }
+                    };
+                }
+                return responce;
+            }
+            catch (Exception ex)
+            {
+                responce = new BaseResponce
+                {
+                    status = StatusCodes.Status500InternalServerError,
+                    data = new { message = "Internal server error" }
+                };
+
+            }
+            return responce;
+        }
+
         public BaseResponce FindUserPermissionsById(long id)
         {
             BaseResponce responce;
@@ -211,7 +251,7 @@ namespace SuperHeros.Services.UserService
                     if (role != null)
                     {
                         responce = new BaseResponce
-                        { 
+                        {
                             status = StatusCodes.Status200OK,
                             data = new { role.permissions }
                         };
@@ -257,7 +297,7 @@ namespace SuperHeros.Services.UserService
                 if (user != null)
                 {
                     RoleModel role = context.Roles.Where(role => role.id == user.role).FirstOrDefault();
-                    if(role != null)
+                    if (role != null)
                     {
                         role.role_name = request.role_name;
                         role.role_description = request.role_description;
@@ -300,6 +340,62 @@ namespace SuperHeros.Services.UserService
 
             }
             return responce;
+        }
+
+        public BaseResponce updateRoleByUserIdJoinQuery(long id, UpdateRoleRequest request)
+        {
+            BaseResponce responce;
+
+            
+
+            try
+            {
+
+
+                RoleModel role = getUser(id).First();
+
+                if (role != null)
+                {
+                    role.role_name = request.role_name;
+                    role.role_description = request.role_description;
+                    role.permissions = request.permissions;
+                }
+
+                context.SaveChanges();
+
+                responce = new BaseResponce
+                {
+                    status = StatusCodes.Status200OK,
+                    data = new { message = "Role Updated Successfully" }
+                };
+
+            }
+            catch (Exception ex)
+            {
+                responce = new BaseResponce
+                {
+                    status = StatusCodes.Status500InternalServerError,
+                    data = new { message = "Internal server error" }
+                };
+
+            }
+            return responce;
+        }
+
+        public List<RoleModel> getUser(long id)
+        {
+            List<RoleModel> selectedRoles = context.Roles.Join(context.Users,
+              r => r.id,
+              u => u.role,
+              (r, u) => new
+              {
+                  r,u
+              })
+              .Where(role => role.u.id == id).Select(role=> role.r)
+              .ToList();
+
+            return selectedRoles;
+
         }
     }
 }

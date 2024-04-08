@@ -4,8 +4,13 @@ using SuperHeros.Services.HeroService;
 using SuperHeros.Services.UserService;
 using Microsoft.OpenApi.Models;
 using SuperHeros.Services.RoleService;
+using SuperHeros.Helpers.Utils.GlobalAttributes;
+using SuperHeros.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add global Attributes 
+GlobalAttributes.mySqlConnection.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Add services to the container.
 
@@ -61,6 +66,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseJwtMiddleware();
 
 app.MapControllers();
 

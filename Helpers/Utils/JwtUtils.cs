@@ -33,5 +33,55 @@ namespace SuperHeros.Helpers.Utils
 
             return tokenHandler.WriteToken(jwtToken);
         }
+
+        public static bool ValidateJwtToken(string token)
+        {
+            try
+            {
+                JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+                byte[] key = Encoding.ASCII.GetBytes(secretKey);
+
+                TokenValidationParameters validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                JwtSecurityToken jwtToken = (JwtSecurityToken)validatedToken;
+
+                long userId = long.Parse(jwtToken.Claims.First(x => x.Type == "user_id").Value);
+            
+                using(ApplicationDbContext context = new ApplicationDbContext())
+                {
+                    UserModel? user = context.Users.FirstOrDefault(u => u.id == userId);
+
+                    if(user == null)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        LoginDetailsModel loginDetails =  context.LoginDetails.Where(details => details.id == userId).First();
+
+                        if(loginDetails.jwt_token != null)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
     }
 }
